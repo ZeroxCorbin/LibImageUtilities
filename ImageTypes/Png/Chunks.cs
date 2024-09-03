@@ -262,13 +262,13 @@ public class PHYS_Chunk : IChunk
 
     public int DpiX
     {
-        get => UnitSpecifier == 0x01 ? (int)Math.Round(PixelsPerUnitX / ImageUtilities.InchesPerMeter) : 0;
-        set => PixelsPerUnitX = (int)Math.Round(value * ImageUtilities.InchesPerMeter);
+        get => UnitSpecifier == 0x01 ? ImageUtilities.Dpm2Dpi(PixelsPerUnitX) : 0;
+        set => PixelsPerUnitX = ImageUtilities.Dpi2Dpm(value);
     }
     public int DpiY
     {
-        get => UnitSpecifier == 0x01 ? (int)Math.Round(PixelsPerUnitY / ImageUtilities.InchesPerMeter) : 0;
-        set => PixelsPerUnitY = (int)Math.Round(value * ImageUtilities.InchesPerMeter);
+        get => UnitSpecifier == 0x01 ? ImageUtilities.Dpm2Dpi(PixelsPerUnitY) : 0;
+        set => PixelsPerUnitY = ImageUtilities.Dpi2Dpm(value);
     }
     /// <summary>
     /// Initilize with 96x96 DPI
@@ -307,6 +307,73 @@ public class PHYS_Chunk : IChunk
         UnitSpecifier = 0x01;
         DpiX = dpiX;
         DpiY = dpiY;
+    }
+}
+
+public class IDAT_Chunk : IChunk
+{
+    private List<byte> _data = [];
+    private byte[] crcData
+    {
+        get
+        {
+            var first = BitConverter.GetBytes((int)Type).Reverse().ToList();
+            first.AddRange(_data);
+            return first.ToArray();
+        }
+    }
+
+    public ChunkTypes Type => ChunkTypes.IDAT;
+    public Parameter Parameters => ChunkParameters.GetParameter(Type);
+
+    public int Length => _data.Count;
+    public List<byte> Data => _data;
+    public byte[] RawData
+    {
+        get
+        {
+            // Add the chunk length
+            var data = new List<byte>(BitConverter.GetBytes(_data.Count).Reverse().ToArray());
+            // Add the chunk type
+            data.AddRange(BitConverter.GetBytes((int)Type).Reverse().ToArray());
+            // Add the chunk data
+            data.AddRange(_data);
+            // Add the CRC
+            data.AddRange(BitConverter.GetBytes(CRC).Reverse());
+            return [.. data];
+        }
+    }
+
+    public uint CRC { get { var data = crcData; return CRC32.ComputeCrc(data, data.Length); } }
+    public bool CheckCRC(uint crc) => crc == CRC;
+
+    /// <summary>
+    /// Initialize with the provided chunk. hasCRC must be true.
+    /// Must Include 4 byte CRC at the end of the chunk.
+    /// This requirement is so there can be an initializer with just data.
+    /// </summary>
+    /// <param name="chunk"></param>
+    /// <param name="hasCRC"></param>
+    /// <exception cref="ArgumentException"></exception>
+    public IDAT_Chunk(List<byte> chunk, bool hasCRC)
+    {
+        if (!hasCRC)
+            throw new ArgumentException("The provided data does not include the 4 byte CRC.");
+
+        var crc = BitConverter.ToInt32(chunk.Skip(chunk.Count - IChunk.CrcSize).Reverse().ToArray(), 0);
+        _data.AddRange(chunk.GetRange(0, chunk.Count - IChunk.CrcSize));
+
+        if (!CheckCRC((uint)crc))
+            throw new ArgumentException("CRC check failed.");
+    }
+    /// <summary>
+    /// Initialize with the provided data.
+    /// Must NOT Include 4 byte CRC at the end of the data.
+    /// </summary>
+    /// <param name="data"></param>
+    public IDAT_Chunk(List<byte> data)
+    {
+        _data.AddRange(data);
     }
 }
 

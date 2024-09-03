@@ -1,6 +1,4 @@
-﻿using DotImaging;
-using LibImageUtilities.ImageTypes.Png;
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -24,17 +22,13 @@ public class ImageUtilities
     /// <param name="image"></param>
     /// <returns>DPI</returns>
     /// <exception cref="ArgumentException"></exception>
-    public static DPI GetImageDPI(byte[] image)
-    {
-        if (Utilities.IsPng(image))
-        {
-            return Utilities.GetPngDPI(image);
-        }
-        else
-        {
-            return ImageUtilities_BMP.IsBmp(image) ? ImageUtilities_BMP.GetBmpDPI(image) : throw new ArgumentException("Unsupported image format.");
-        }
-    }
+    public static DPI GetImageDPI(byte[] image) =>
+        ImageTypes.Png.Utilities.IsPng(image)
+        ? ImageTypes.Png.Utilities.GetDPI(image)
+        : ImageTypes.Bmp.Utilities.IsBmp(image)
+        ? ImageTypes.Bmp.Utilities.GetDPI(image)
+        : throw new ArgumentException("Unsupported image format.");
+
     /// <summary>
     /// Set the header DPI of a PNG or BMP image.
     /// </summary>
@@ -45,23 +39,17 @@ public class ImageUtilities
     public static byte[] SetImageDPI(byte[] image, int dpiX, int dpiY = 0)
     {
         if (dpiX <= 0)
-        {
             throw new ArgumentException("DPI value must be greater than zero.");
-        }
-
         if (dpiY <= 0)
-        {
             dpiY = dpiX; // Use dpiX if dpiY is not provided or invalid
-        }
 
-        if (Utilities.IsPng(image))
-        {
-            return Utilities.SetPngDPI(image, dpiX, dpiY);
-        }
-        else
-        {
-            return ImageUtilities_BMP.IsBmp(image) ? ImageUtilities_BMP.SetBitmapDPI(image, dpiX, dpiY) : throw new ArgumentException("Unsupported image format.");
-        }
+        return ImageTypes.Png.Utilities.IsPng(image)
+            ? ImageTypes.Png.Utilities.SetDPI(image, dpiX, dpiY)
+
+            : ImageTypes.Bmp.Utilities.IsBmp(image)
+            ? ImageTypes.Bmp.Utilities.SetDPI(image, dpiX, dpiY)
+
+            : throw new ArgumentException("Unsupported image format.");
     }
 
     /// <summary>
@@ -73,13 +61,11 @@ public class ImageUtilities
     {
         try
         {
-            using SHA256 md5 = SHA256.Create();
-            return BitConverter.ToString(md5.ComputeHash(image)).Replace("-", String.Empty);
-
+            return BitConverter.ToString(SHA256.HashData(image)).Replace("-", String.Empty);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return string.Empty;
+            throw new ArgumentException("Error getting image UID.", ex);
         }
     }
     /// <summary>
@@ -91,28 +77,21 @@ public class ImageUtilities
     {
         try
         {
-            byte[] imageData;
-
-            if (Utilities.IsPng(image))
-            {
-                imageData = Utilities.ExtractIDATData(image);
-            }
-            else
-            {
-                imageData = ImageUtilities_BMP.IsBmp(image) ? ImageUtilities_BMP.ExtractBitmapData(image) : throw new ArgumentException("Unsupported image format.");
-            }
-
-            using SHA256 sha256 = SHA256.Create();
-            return BitConverter.ToString(sha256.ComputeHash(imageData)).Replace("-", string.Empty);
+            byte[] imageData = ImageTypes.Png.Utilities.IsPng(image)
+                ? ImageTypes.Png.Utilities.GetImageData(image)
+                : ImageTypes.Bmp.Utilities.IsBmp(image)
+                ? ImageTypes.Bmp.Utilities.GetImageData(image)
+                : throw new ArgumentException("Unsupported image format.");
+            return BitConverter.ToString(SHA256.HashData(imageData)).Replace("-", string.Empty);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return string.Empty;
+            throw new ArgumentException("Error getting image data UID.", ex);
         }
     }
 
-    public static int DotsPerInch(int dpm) => (int)Math.Round(dpm / InchesPerMeter);
-    public static int DotsPerMeter(int dpi) => (int)Math.Round(dpi * InchesPerMeter);
+    public static int Dpm2Dpi(int dpm) => (int)Math.Round(dpm / InchesPerMeter);
+    public static int Dpi2Dpm(int dpi) => (int)Math.Round(dpi * InchesPerMeter);
 
     //Seek #FileIndex, 7   ' position of balance information
     //Get #FileIndex, , BalanceInfo

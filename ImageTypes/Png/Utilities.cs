@@ -1,4 +1,5 @@
 ﻿using DotImaging;
+using LibImageUtilities.ImageTypes.Bmp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -50,65 +51,49 @@ public static class Utilities
 
         if (IsPng(img))
         {
-            var dpi = GetPngDPI(img);
+            var dpi = GetDPI(img);
             if (dpi.X == dpiX && dpi.Y == dpiY)
             {
                 return img;
             }
             else
             {
-                return SetPngDPI(img, dpiX, dpiY); ;
+                return SetDPI(img, dpiX, dpiY); ;
             }
         }
 
         return ConvertBmpToPng(img);
     }
-    public static byte[] GetPng(byte[] img, PixelFormat pixelFormat)
-    {
-        //if (IsPng(img))
-        //    return GetPngPixelFormat(img) == pixelFormat ? img : SetPngPixelFormat(img, pixelFormat);
-
-        //byte[] res = IsBmp(img) ? SetBmpPixelFormat(img, pixelFormat) : throw new ArgumentException("Unsupported image format.");
-
-        return ConvertBmpToPng(img);
-    }
-    public static byte[] ConvertBmpToPng(byte[] bmp)
+    public static byte[] GetPng(byte[] img, ImageUtilities.DPI dpi) => GetPng(img, dpi.X, dpi.Y);
+    public static byte[] GetPng(byte[] img, PixelFormat pixelFormat) => IsPng(img) ? SetPixelFormat(img, pixelFormat) : ConvertBmpToPng(img, pixelFormat);
+    
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
+    public static byte[] ConvertBmpToPng(byte[] bmp, PixelFormat? pixelFormat = null)
     {
         // Get the DPI from the BMP image
-        var dpi = ImageUtilities_BMP.GetBmpDPI(bmp);
+        var dpi = Bmp.Utilities.GetDPI(bmp);
         // Determine the appropriate type for the ToImage<TColor> method
-        var pixelFormat = ImageUtilities_BMP.GetBmpPixelFormat(bmp);
+        pixelFormat = pixelFormat ?? Bmp.Utilities.GetPixelFormat(bmp);
 
         using MemoryStream ms = new(bmp);
         using var bitmap = new Bitmap(ms);
-        byte[] png;
-        switch (pixelFormat)
+        byte[] png = pixelFormat switch
         {
-            case PixelFormat.Format24bppRgb:
-                png = bitmap.ToImage<Bgr<byte>>().Encode(".png");
-                break;
-            case PixelFormat.Format32bppArgb:
-                png = bitmap.ToImage<Bgra<byte>>().Encode(".png");
-                break;
-            case PixelFormat.Format8bppIndexed:
-                png = bitmap.ToImage<Gray<byte>>().Encode(".png");
-                break;
-            default:
-                throw new NotSupportedException($"Pixel format {pixelFormat} is not supported.");
-        }
-
-        var pngFormat = GetPngPixelFormat(png);
-        string pngs = System.Text.Encoding.Default.GetString(png);
-        return SetPngDPI(png, dpi);
+            PixelFormat.Format24bppRgb => bitmap.ToImage<Bgr<byte>>().Encode(".png"),
+            PixelFormat.Format32bppArgb => bitmap.ToImage<Bgra<byte>>().Encode(".png"),
+            PixelFormat.Format8bppIndexed => bitmap.ToImage<Gray<byte>>().Encode(".png"),
+            _ => throw new NotSupportedException($"Pixel format {pixelFormat} is not supported."),
+        };
+        return SetDPI(png, dpi);
     }
 
-    public static ImageUtilities.DPI GetPngDPI(byte[] image)
+    public static ImageUtilities.DPI GetDPI(byte[] image)
     {
         if (!IsPng(image))
             throw new ArgumentException("The provided byte array is not a valid PNG image.");
 
-        var chunks = Png.GetPngChunks(image);
-        if (chunks.TryGetValue(ChunkTypes.pHYs, out IChunk value))
+        var png = new Png(image);
+        if (png.Chunks.TryGetValue(ChunkTypes.pHYs, out IChunk? value))
         {
             PHYS_Chunk physChunk = (PHYS_Chunk)value;
             return new ImageUtilities.DPI
@@ -120,12 +105,25 @@ public static class Utilities
 
         throw new ArgumentException("pHYs chunk not found in PNG file.");
     }
+    public static byte[] SetDPI(byte[] image, ImageUtilities.DPI dpi) => SetDPI(image, dpi.X, dpi.Y);
+    public static byte[] SetDPI(byte[] image, int dpiX, int dpiY)
+    {
+        if (!IsPng(image))
+            throw new ArgumentException("The provided byte array is not a valid PNG image.");
+
+        var png = new Png(image)
+        {
+            pHYs = new PHYS_Chunk(dpiX, dpiY)
+        };
+        return png.GetBytes();
+    }
+
     /// <summary>
     /// Get the pixel format of a PNG image by reading the header bytes.
     /// </summary>
     /// <param name="image">PNG image byte array</param>
     /// <returns>PixelFormat</returns>
-    public static PixelFormat GetPngPixelFormat(byte[] image)
+    public static PixelFormat GetPixelFormat(byte[] image)
     {
         if (!IsPng(image))
             throw new ArgumentException("The provided byte array is not a valid PNG image.");
@@ -143,49 +141,115 @@ public static class Utilities
             _ => throw new NotSupportedException("Unsupported PNG color type.")
         };
     }
-    public static byte[] SetPngDPI(byte[] image, ImageUtilities.DPI dpi) => SetPngDPI(image, dpi.X, dpi.Y);
-    public static byte[] SetPngDPI(byte[] image, int dpiX, int dpiY)
-    {
-        if (!IsPng(image))
-            throw new ArgumentException("The provided byte array is not a valid PNG image.");
-
-        var png = new Png(image)
-        {
-            pHYs = new PHYS_Chunk(dpiX, dpiY)
-        };
-        return png.GetBytes();
-    }
-
     /// <summary>
     /// Converts a PNG byte array to a new PixelFormat.
     /// </summary>
     /// <param name="image">PNG image byte array</param>
     /// <param name="newPixelFormat">The new PixelFormat</param>
     /// <returns>Converted PNG image byte array</returns>
-    public static byte[] SetPngPixelFormat(byte[] image, PixelFormat newPixelFormat)
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
+    public static byte[] SetPixelFormat(byte[] image, PixelFormat pixelFormat)
     {
         if (!IsPng(image))
             throw new ArgumentException("The provided byte array is not a valid PNG image.");
 
-        using MemoryStream inputStream = new(image);
-        using Bitmap originalBitmap = new(inputStream);
-        Bitmap newBitmap = new Bitmap(originalBitmap.Width, originalBitmap.Height, newPixelFormat);
+        if(pixelFormat == GetPixelFormat(image))
+            return image;
 
-        // Use Graphics to draw the original bitmap onto the new bitmap
-        using (Graphics g = Graphics.FromImage(newBitmap))
-            g.DrawImage(originalBitmap, new Rectangle(0, 0, newBitmap.Width, newBitmap.Height));
+        // Get the DPI from the BMP image
+        var dpi = GetDPI(image);
 
-        using MemoryStream outputStream = new();
-        newBitmap.Save(outputStream, ImageFormat.Png);
-        return outputStream.ToArray();
+        using MemoryStream ms = new(image);
+        using var bitmap = new Bitmap(ms);
+        byte[] png;
+        switch (pixelFormat)
+        {
+            case PixelFormat.Format24bppRgb:
+                png = bitmap.ToImage<Bgr<byte>>().Encode(".png");
+                break;
+            case PixelFormat.Format32bppArgb:
+                png = bitmap.ToImage<Bgra<byte>>().Encode(".png");
+                break;
+            case PixelFormat.Format8bppIndexed:
+                png = bitmap.ToImage<Gray<byte>>().Encode(".png");
+                break;
+            default:
+                throw new NotSupportedException($"Pixel format {pixelFormat} is not supported.");
+        }
+
+        var pngFormat = GetPixelFormat(png);
+        return SetDPI(png, dpi);
     }
 
-    public static byte[] ExtractIDATData(byte[] image)
+    public static byte[] GetImageData(byte[] image)
     {
         if (!IsPng(image))
             throw new ArgumentException("The provided byte array is not a valid PNG image.");
 
-        var chunks = Png.GetPngChunks(image);
+        var chunks = GetChunks(image);
         return chunks.TryGetValue(ChunkTypes.IDAT, out IChunk value) ? [.. value.Data] : ([]);
+    }
+
+    public static Dictionary<ChunkTypes, IChunk> GetChunks(byte[] png)
+    {
+        Dictionary<ChunkTypes, IChunk> chunks = [];
+
+        using MemoryStream ms = new(png);
+        using BinaryReader reader = new(ms);
+
+        // Skip the PNG signature
+        reader.BaseStream.Seek(Signature.Length, SeekOrigin.Begin);
+
+        while (reader.BaseStream.Position < reader.BaseStream.Length)
+        {
+            int chunkLength = BitConverter.ToInt32(reader.ReadBytes(Png.IntSize).Reverse().ToArray(), 0);
+            int chunkType = BitConverter.ToInt32(reader.ReadBytes(Png.IntSize).Reverse().ToArray(), 0);
+
+            if (Enum.IsDefined(typeof(ChunkTypes), chunkType))
+            {
+                if (!chunks.ContainsKey((ChunkTypes)chunkType))
+                    chunks.Add((ChunkTypes)chunkType, GetChunkData(reader, chunkLength, (ChunkTypes)chunkType));
+                else
+                {
+                    chunks[(ChunkTypes)chunkType].Data.AddRange(reader.ReadBytes(chunkLength));
+                    reader.BaseStream.Seek(IChunk.CrcSize, SeekOrigin.Current);
+                }
+            }
+            else
+                reader.BaseStream.Seek(IChunk.CrcSize + chunkLength, SeekOrigin.Current);
+        }
+
+        return chunks;
+    }
+    private static IChunk GetChunkData(BinaryReader reader, int chunkLength, ChunkTypes chunkType)
+    {
+        List<byte> data = [];
+
+        for (int i = 0; i < chunkLength + IChunk.CrcSize; i++)
+            data.Add(reader.ReadByte());
+
+        return chunkType switch
+        {
+            ChunkTypes.IHDR => new IHDR_Chunk(data),
+            ChunkTypes.PLTE => new Generic_Chunk(data, chunkType),
+            ChunkTypes.IDAT => new IDAT_Chunk(data, true),
+            ChunkTypes.IEND => new Generic_Chunk(data, chunkType),
+            ChunkTypes.pHYs => new PHYS_Chunk(data),
+            ChunkTypes.tEXt => new Generic_Chunk(data, chunkType),
+            ChunkTypes.zTXt => new Generic_Chunk(data, chunkType),
+            ChunkTypes.tIME => new Generic_Chunk(data, chunkType),
+            ChunkTypes.tRNS => new Generic_Chunk(data, chunkType),
+            ChunkTypes.cHRM => new Generic_Chunk(data, chunkType),
+            ChunkTypes.gAMA => new Generic_Chunk(data, chunkType),
+            ChunkTypes.iCCP => new Generic_Chunk(data, chunkType),
+            ChunkTypes.sBIT => new Generic_Chunk(data, chunkType),
+            ChunkTypes.sRGB => new Generic_Chunk(data, chunkType),
+            ChunkTypes.iTXt => new Generic_Chunk(data, chunkType),
+            ChunkTypes.bKGD => new Generic_Chunk(data, chunkType),
+            ChunkTypes.hIST => new Generic_Chunk(data, chunkType),
+            ChunkTypes.pCAL => new Generic_Chunk(data, chunkType),
+            ChunkTypes.sPLT => new Generic_Chunk(data, chunkType),
+            _ => new Generic_Chunk(data, chunkType),
+        };
     }
 }

@@ -11,35 +11,26 @@ public class Png
     public Signature Signature { get; }
     public Dictionary<ChunkTypes, IChunk> Chunks { get; }
 
-    public Png(byte[] image)
+    public IHDR_Chunk? IHDR
     {
-        Signature = new Signature(image.Take(Signature.Length).ToArray());
-        Chunks = GetPngChunks(image);
+        get => Chunks.TryGetValue(ChunkTypes.IHDR, out IChunk? val) ? (IHDR_Chunk)val : null;
+        set
+        {
+            if (value == null)
+                return;
+
+            if (Chunks.TryGetValue(ChunkTypes.IHDR, out IChunk? val))
+                Chunks[ChunkTypes.IHDR] = value;
+            else
+                Chunks.Add(ChunkTypes.IHDR, value);
+        }
     }
-    public Png()
-    {
-        Signature = new();
-        Chunks = [];
-    }
-    public byte[] GetBytes()
-    {
-        List<byte> data = new(Signature.RawData);
-
-        var srt = Chunks.OrderBy(x => x.Value.Parameters.Ordering);
-        var lst = srt.ToList();
-
-        foreach (var chunk in lst)
-            data.AddRange(chunk.Value.RawData);
-
-        return [.. data];
-    }
-
     public PHYS_Chunk? pHYs
     {
         get => Chunks.TryGetValue(ChunkTypes.pHYs, out IChunk? val) ? (PHYS_Chunk)val : null;
         set
         {
-            if(value == null)
+            if (value == null)
             {
                 _ = Chunks.Remove(ChunkTypes.pHYs);
                 return;
@@ -52,66 +43,23 @@ public class Png
         }
     }
 
-    public static Dictionary<ChunkTypes, IChunk> GetPngChunks(byte[] png)
+
+    public Png(byte[] image)
     {
-        Dictionary<ChunkTypes, IChunk> chunks = [];
-
-        using MemoryStream ms = new(png);
-        using BinaryReader reader = new(ms);
-
-        // Skip the PNG signature
-        reader.BaseStream.Seek(Signature.Length, SeekOrigin.Begin);
-
-        while (reader.BaseStream.Position < reader.BaseStream.Length)
-        {
-            int chunkLength = BitConverter.ToInt32(reader.ReadBytes(IntSize).Reverse().ToArray(), 0);
-            int chunkType = BitConverter.ToInt32(reader.ReadBytes(IntSize).Reverse().ToArray(), 0);
-
-            if (Enum.IsDefined(typeof(ChunkTypes), chunkType))
-            {
-                if (!chunks.ContainsKey((ChunkTypes)chunkType))
-                    chunks.Add((ChunkTypes)chunkType, GetChunkData(reader, chunkLength, (ChunkTypes)chunkType));
-                else
-                {
-                    chunks[(ChunkTypes)chunkType].Data.AddRange(reader.ReadBytes(chunkLength));
-                    reader.BaseStream.Seek(IChunk.CrcSize, SeekOrigin.Current);
-                }
-            }
-            else
-                reader.BaseStream.Seek(IChunk.CrcSize + chunkLength, SeekOrigin.Current);
-        }
-
-        return chunks;
+        Signature = new Signature(image.Take(Signature.Length).ToArray());
+        Chunks = Utilities.GetChunks(image);
     }
-    private static IChunk GetChunkData(BinaryReader reader, int chunkLength, ChunkTypes chunkType)
+
+    public byte[] GetBytes()
     {
-        List<byte> data = [];
+        List<byte> data = new(Signature.RawData);
 
-        for (int i = 0; i < chunkLength + IChunk.CrcSize; i++)
-            data.Add(reader.ReadByte());
+        var srt = Chunks.OrderBy(x => x.Value.Parameters.Ordering);
+        var lst = srt.ToList();
 
-        return chunkType switch
-        {
-            ChunkTypes.IHDR => new IHDR_Chunk(data),
-            ChunkTypes.PLTE => new Generic_Chunk(data, chunkType),
-            ChunkTypes.IDAT => new Generic_Chunk(data, chunkType),
-            ChunkTypes.IEND => new Generic_Chunk(data, chunkType),
-            ChunkTypes.pHYs => new PHYS_Chunk(data),
-            ChunkTypes.tEXt => new Generic_Chunk(data, chunkType),
-            ChunkTypes.zTXt => new Generic_Chunk(data, chunkType),
-            ChunkTypes.tIME => new Generic_Chunk(data, chunkType),
-            ChunkTypes.tRNS => new Generic_Chunk(data, chunkType),
-            ChunkTypes.cHRM => new Generic_Chunk(data, chunkType),
-            ChunkTypes.gAMA => new Generic_Chunk(data, chunkType),
-            ChunkTypes.iCCP => new Generic_Chunk(data, chunkType),
-            ChunkTypes.sBIT => new Generic_Chunk(data, chunkType),
-            ChunkTypes.sRGB => new Generic_Chunk(data, chunkType),
-            ChunkTypes.iTXt => new Generic_Chunk(data, chunkType),
-            ChunkTypes.bKGD => new Generic_Chunk(data, chunkType),
-            ChunkTypes.hIST => new Generic_Chunk(data, chunkType),
-            ChunkTypes.pCAL => new Generic_Chunk(data, chunkType),
-            ChunkTypes.sPLT => new Generic_Chunk(data, chunkType),
-            _ => new Generic_Chunk(data, chunkType),
-        };
+        foreach (var chunk in lst)
+            data.AddRange(chunk.Value.RawData);
+
+        return [.. data];
     }
 }
