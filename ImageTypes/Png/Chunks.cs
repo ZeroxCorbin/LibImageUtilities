@@ -35,6 +35,7 @@ public interface IChunk
     ChunkTypes Type { get; }
     Parameter Parameters { get; }
     List<byte> Data { get; }
+    byte[] RawData { get; }
     uint CRC { get; }
     bool CheckCRC(uint crc);
 }
@@ -257,9 +258,27 @@ public class PHYS_Chunk : IChunk
         set => _data[8] = value;
     }
 
-    public int DpiX => UnitSpecifier == 0x01 ? (int)(PixelsPerUnitX * ImageUtilities.InchesPerMeter) : 0;
-    public int DpiY => UnitSpecifier == 0x01 ? (int)(PixelsPerUnitY * ImageUtilities.InchesPerMeter) : 0;
+    public int DpiX
+    {
+        get => UnitSpecifier == 0x01 ? (int)Math.Round(PixelsPerUnitX / ImageUtilities.InchesPerMeter) : 0;
+        set => PixelsPerUnitX = (int)Math.Round(value * ImageUtilities.InchesPerMeter);
+    }
+    public int DpiY
+    {
+        get => UnitSpecifier == 0x01 ? (int)Math.Round(PixelsPerUnitY / ImageUtilities.InchesPerMeter) : 0;
+        set => PixelsPerUnitY = (int)Math.Round(value * ImageUtilities.InchesPerMeter);
+    }
+    /// <summary>
+    /// Initilize with 96x96 DPI
+    /// </summary>
+    public PHYS_Chunk()
+    {
+        _data.AddRange(new byte[9]);
 
+        UnitSpecifier = 0x01;
+        DpiX = 96;
+        DpiY = 96;
+    }
     public PHYS_Chunk(List<byte> chunk)
     {
         var crc = BitConverter.ToInt32(chunk.Skip(chunk.Count - IChunk.CrcSize).Reverse().ToArray(), 0);

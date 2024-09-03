@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Linq;
 
 namespace LibImageUtilities.ImageTypes.Png;
 
@@ -10,10 +11,10 @@ public class Parameter(int length, ChunkTypes type, bool multipleAllowed, double
     public bool MultipleAllowed { get; } = multipleAllowed;
     public double Ordering { get; } = ordering;
 
-    public bool Critical => new BitArray((int)Type)[5];
-    public bool Public => new BitArray((int)Type)[13];
-    public bool Reserved => new BitArray((int)Type)[21];
-    public bool SafeToCopy => new BitArray((int)Type)[29];
+    public bool Ancillary => new BitArray(new int[] { (int)Type })[5];
+    public bool Public => new BitArray(new int[] {(int)Type })[13];
+    public bool Reserved => new BitArray(new int[] { (int)Type })[21];
+    public bool SafeToCopy => new BitArray(new int[] { (int)Type })[28];
 }
 
 public static class ChunkParameters

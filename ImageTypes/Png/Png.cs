@@ -4,12 +4,37 @@ using System.IO;
 using System.Linq;
 
 namespace LibImageUtilities.ImageTypes.Png;
-public class Png(byte[] image)
+public class Png
 {
     public const int IntSize = 4;
 
-    public Signature Signature { get; set; } = new();
-    public Dictionary<ChunkTypes, IChunk> Chunks { get; set; } = GetPngChunks(image);
+    public Signature Signature { get; }
+    public Dictionary<ChunkTypes, IChunk> Chunks { get; }
+
+    public Png(byte[] image)
+    {
+        Signature = new Signature(image.Take(Signature.Length).ToArray());
+        Chunks = GetPngChunks(image);
+    }
+
+    public Png()
+    {
+        Signature = new();
+        Chunks = [];
+    }
+
+    public byte[] GetBytes()
+    {
+        List<byte> data = new(Signature.RawData);
+
+        var srt = Chunks.OrderBy(x => x.Value.Parameters.Ordering);
+        var lst = srt.ToList();
+
+        foreach (var chunk in lst)
+            data.AddRange(chunk.Value.RawData);
+
+        return [.. data];
+    }
 
     public static Dictionary<ChunkTypes, IChunk> GetPngChunks(byte[] png)
     {

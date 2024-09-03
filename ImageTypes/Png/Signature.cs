@@ -22,7 +22,7 @@ public class Signature
         _data[6] == 0x1A && //The control-Z character stops file display under MS-DOS.
         _data[7] == 0x0A;   //The final line feed checks for the inverse of the CR-LF translation problem.
     public int UniqueID => BitConverter.ToInt16(_data.Take(2).ToArray(), 0);
-    public string FormatName => System.Text.Encoding.Default.GetString(_data.Skip(2).Take(3).ToArray());
+    public string FormatName => System.Text.Encoding.Default.GetString(_data.Skip(1).Take(3).ToArray());
     public bool ValidCrLf => _data[4] == 0x0D && _data[5] == 0x0A;
     public bool ValidControlZ => _data[6] == 0x1A;
     public bool ValidFinalLf => _data[7] == 0x0A;
