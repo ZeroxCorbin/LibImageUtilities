@@ -1,4 +1,5 @@
 ﻿using DotImaging;
+using LibImageUtilities.ImageTypes.Png;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -25,9 +26,9 @@ public class ImageUtilities
     /// <exception cref="ArgumentException"></exception>
     public static DPI GetImageDPI(byte[] image)
     {
-        if (ImageUtilities_PNG.IsPng(image))
+        if (Utilities.IsPng(image))
         {
-            return ImageUtilities_PNG.GetPngDPI(image);
+            return Utilities.GetPngDPI(image);
         }
         else
         {
@@ -53,9 +54,9 @@ public class ImageUtilities
             dpiY = dpiX; // Use dpiX if dpiY is not provided or invalid
         }
 
-        if (ImageUtilities_PNG.IsPng(image))
+        if (Utilities.IsPng(image))
         {
-            return ImageUtilities_PNG.SetPngDPI(image, dpiX, dpiY);
+            return Utilities.SetPngDPI(image, dpiX, dpiY);
         }
         else
         {
@@ -92,9 +93,9 @@ public class ImageUtilities
         {
             byte[] imageData;
 
-            if (ImageUtilities_PNG.IsPng(image))
+            if (Utilities.IsPng(image))
             {
-                imageData = ImageUtilities_PNG.ExtractIDATData(image);
+                imageData = Utilities.ExtractIDATData(image);
             }
             else
             {

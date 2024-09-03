@@ -1,4 +1,5 @@
 ﻿using DotImaging;
+using LibImageUtilities.ImageTypes.Png;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -60,7 +61,7 @@ public static class ImageUtilities_BMP
         using var bitmap = new Bitmap(ms);
 
         // Determine the appropriate type for the ToImage<TColor> method
-        var pixelFormat = ImageUtilities_PNG.GetPngPixelFormat(png);
+        var pixelFormat = Utilities.GetPngPixelFormat(png);
 
         switch (pixelFormat)
         {
