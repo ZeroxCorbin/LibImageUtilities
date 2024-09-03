@@ -4,25 +4,27 @@ using System.IO;
 using System.Linq;
 
 namespace LibImageUtilities.ImageTypes.Png;
-public class Png
+public class Png(byte[] image)
 {
+    public const int IntSize = 4;
+
     public Signature Signature { get; set; } = new();
-    public List<IChunk> Chunks { get; set; } = [];
+    public Dictionary<ChunkTypes, IChunk> Chunks { get; set; } = GetPngChunks(image);
 
     public static Dictionary<ChunkTypes, IChunk> GetPngChunks(byte[] png)
     {
-        Dictionary<ChunkTypes, IChunk> chunks = new();
+        Dictionary<ChunkTypes, IChunk> chunks = [];
 
         using MemoryStream ms = new(png);
         using BinaryReader reader = new(ms);
 
         // Skip the PNG signature
-        reader.BaseStream.Seek(8, SeekOrigin.Begin);
+        reader.BaseStream.Seek(Signature.Length, SeekOrigin.Begin);
 
         while (reader.BaseStream.Position < reader.BaseStream.Length)
         {
-            int chunkLength = BitConverter.ToInt32(reader.ReadBytes(4).Reverse().ToArray(), 0);
-            int chunkType = BitConverter.ToInt32(reader.ReadBytes(4).Reverse().ToArray(), 0);
+            int chunkLength = BitConverter.ToInt32(reader.ReadBytes(IntSize).Reverse().ToArray(), 0);
+            int chunkType = BitConverter.ToInt32(reader.ReadBytes(IntSize).Reverse().ToArray(), 0);
 
             if (Enum.IsDefined(typeof(ChunkTypes), chunkType))
             {
@@ -31,65 +33,44 @@ public class Png
                 else
                 {
                     chunks[(ChunkTypes)chunkType].Data.AddRange(reader.ReadBytes(chunkLength));
-                    reader.BaseStream.Seek(4, SeekOrigin.Current);
+                    reader.BaseStream.Seek(IChunk.CrcSize, SeekOrigin.Current);
                 }
             }
             else
-                reader.BaseStream.Seek(4 + chunkLength, SeekOrigin.Current);
+                reader.BaseStream.Seek(IChunk.CrcSize + chunkLength, SeekOrigin.Current);
         }
 
         return chunks;
     }
-    public static IChunk GetChunkData(BinaryReader reader, int chunkLength, ChunkTypes chunkType)
+    private static IChunk GetChunkData(BinaryReader reader, int chunkLength, ChunkTypes chunkType)
     {
-        List<byte> data = new();
+        List<byte> data = [];
 
-        for (int i = 0; i < chunkLength + 4; i++)
+        for (int i = 0; i < chunkLength + IChunk.CrcSize; i++)
             data.Add(reader.ReadByte());
 
-        switch (chunkType)
+        return chunkType switch
         {
-            case ChunkTypes.IHDR:
-                return new IHDR_Chunk(data);
-            case ChunkTypes.PLTE:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.IDAT:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.IEND:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.pHYs:
-                return new PHYS_Chunk(data);
-            case ChunkTypes.tEXt:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.zTXt:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.tIME:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.tRNS:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.cHRM:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.gAMA:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.iCCP:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.sBIT:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.sRGB:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.iTXt:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.bKGD:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.hIST:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.pCAL:
-                return new Generic_Chunk(data, chunkType);
-            case ChunkTypes.sPLT:
-                return new Generic_Chunk(data, chunkType);
-
-        }
-
-        return null;
+            ChunkTypes.IHDR => new IHDR_Chunk(data),
+            ChunkTypes.PLTE => new Generic_Chunk(data, chunkType),
+            ChunkTypes.IDAT => new Generic_Chunk(data, chunkType),
+            ChunkTypes.IEND => new Generic_Chunk(data, chunkType),
+            ChunkTypes.pHYs => new PHYS_Chunk(data),
+            ChunkTypes.tEXt => new Generic_Chunk(data, chunkType),
+            ChunkTypes.zTXt => new Generic_Chunk(data, chunkType),
+            ChunkTypes.tIME => new Generic_Chunk(data, chunkType),
+            ChunkTypes.tRNS => new Generic_Chunk(data, chunkType),
+            ChunkTypes.cHRM => new Generic_Chunk(data, chunkType),
+            ChunkTypes.gAMA => new Generic_Chunk(data, chunkType),
+            ChunkTypes.iCCP => new Generic_Chunk(data, chunkType),
+            ChunkTypes.sBIT => new Generic_Chunk(data, chunkType),
+            ChunkTypes.sRGB => new Generic_Chunk(data, chunkType),
+            ChunkTypes.iTXt => new Generic_Chunk(data, chunkType),
+            ChunkTypes.bKGD => new Generic_Chunk(data, chunkType),
+            ChunkTypes.hIST => new Generic_Chunk(data, chunkType),
+            ChunkTypes.pCAL => new Generic_Chunk(data, chunkType),
+            ChunkTypes.sPLT => new Generic_Chunk(data, chunkType),
+            _ => new Generic_Chunk(data, chunkType),
+        };
     }
 }

@@ -29,6 +29,8 @@ public enum ChunkTypes
 
 public interface IChunk
 {
+    public const int CrcSize = 4;
+
     int Length { get; }
     ChunkTypes Type { get; }
     Parameter Parameters { get; }
@@ -78,8 +80,8 @@ public class Generic_Chunk : IChunk
     {
         Type = type;
 
-        var crc = BitConverter.ToInt32(chunk.Skip(chunk.Count - 4).Reverse().ToArray(), 0);
-        _data.AddRange(chunk.GetRange(0, chunk.Count - 4));
+        var crc = BitConverter.ToInt32(chunk.Skip(chunk.Count - IChunk.CrcSize).Reverse().ToArray(), 0);
+        _data.AddRange(chunk.GetRange(0, chunk.Count - IChunk.CrcSize));
 
         if (!CheckCRC((uint)crc))
             throw new ArgumentException("CRC check failed.");
@@ -173,8 +175,8 @@ public class IHDR_Chunk : IChunk
 
     public IHDR_Chunk(List<byte> chunk)
     {
-        var crc = BitConverter.ToInt32(chunk.Skip(chunk.Count - 4).Reverse().ToArray(), 0);
-        _data.AddRange(chunk.GetRange(0, chunk.Count - 4));
+        var crc = BitConverter.ToInt32(chunk.Skip(chunk.Count - IChunk.CrcSize).Reverse().ToArray(), 0);
+        _data.AddRange(chunk.GetRange(0, chunk.Count - IChunk.CrcSize));
 
         if (!CheckCRC((uint)crc))
             throw new ArgumentException("CRC check failed.");
@@ -260,8 +262,8 @@ public class PHYS_Chunk : IChunk
 
     public PHYS_Chunk(List<byte> chunk)
     {
-        var crc = BitConverter.ToInt32(chunk.Skip(chunk.Count - 4).Reverse().ToArray(), 0);
-        _data.AddRange(chunk.GetRange(0, chunk.Count - 4));
+        var crc = BitConverter.ToInt32(chunk.Skip(chunk.Count - IChunk.CrcSize).Reverse().ToArray(), 0);
+        _data.AddRange(chunk.GetRange(0, chunk.Count - IChunk.CrcSize));
 
         if (!CheckCRC((uint)crc))
             throw new ArgumentException("CRC check failed.");
