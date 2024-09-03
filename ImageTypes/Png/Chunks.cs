@@ -193,7 +193,9 @@ public class IHDR_Chunk : IChunk
         _data.Add(interlaceMethod);
     }
 }
-
+/// <summary>
+/// Describes the image pixel dimesions.
+/// </summary>
 public class PHYS_Chunk : IChunk
 {
     private List<byte> _data = [];
@@ -292,6 +294,19 @@ public class PHYS_Chunk : IChunk
         _data.AddRange(BitConverter.GetBytes(pixelsPerUnitX).Reverse());
         _data.AddRange(BitConverter.GetBytes(pixelsPerUnitY).Reverse());
         _data.Add(unitSpecifier);
+    }
+    /// <summary>
+    /// Initialize with UnitSpecifier = 0x01
+    /// </summary>
+    /// <param name="dpiX"></param>
+    /// <param name="dpiY"></param>
+    public PHYS_Chunk(int dpiX, int dpiY)
+    {
+        _data.AddRange(new byte[9]);
+
+        UnitSpecifier = 0x01;
+        DpiX = dpiX;
+        DpiY = dpiY;
     }
 }
 

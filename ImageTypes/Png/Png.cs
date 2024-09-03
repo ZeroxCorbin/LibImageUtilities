@@ -16,13 +16,11 @@ public class Png
         Signature = new Signature(image.Take(Signature.Length).ToArray());
         Chunks = GetPngChunks(image);
     }
-
     public Png()
     {
         Signature = new();
         Chunks = [];
     }
-
     public byte[] GetBytes()
     {
         List<byte> data = new(Signature.RawData);
@@ -34,6 +32,24 @@ public class Png
             data.AddRange(chunk.Value.RawData);
 
         return [.. data];
+    }
+
+    public PHYS_Chunk? pHYs
+    {
+        get => Chunks.TryGetValue(ChunkTypes.pHYs, out IChunk? val) ? (PHYS_Chunk)val : null;
+        set
+        {
+            if(value == null)
+            {
+                _ = Chunks.Remove(ChunkTypes.pHYs);
+                return;
+            }
+
+            if (Chunks.TryGetValue(ChunkTypes.pHYs, out IChunk? val))
+                Chunks[ChunkTypes.pHYs] = value;
+            else
+                Chunks.Add(ChunkTypes.pHYs, value);
+        }
     }
 
     public static Dictionary<ChunkTypes, IChunk> GetPngChunks(byte[] png)

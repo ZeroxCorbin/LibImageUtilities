@@ -149,13 +149,11 @@ public static class Utilities
         if (!IsPng(image))
             throw new ArgumentException("The provided byte array is not a valid PNG image.");
 
-        var chunks = Png.GetPngChunks(image);
-        if (chunks.TryGetValue(ChunkTypes.pHYs, out IChunk value))
+        var png = new Png(image)
         {
-            PHYS_Chunk physChunk = (PHYS_Chunk)value;
-        }
-        return image;
-        //throw new ArgumentException("pHYs chunk not found in PNG file.");
+            pHYs = new PHYS_Chunk(dpiX, dpiY)
+        };
+        return png.GetBytes();
     }
 
     /// <summary>
