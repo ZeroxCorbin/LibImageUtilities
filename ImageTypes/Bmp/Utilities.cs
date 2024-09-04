@@ -55,13 +55,17 @@ public static class Utilities
         return ConvertPngToBmp(img);
     }
     public static byte[] GetBmp(byte[] img, ImageUtilities.DPI dpi) => GetBmp(img, dpi.X, dpi.Y);
-    public static byte[] GetBmp(byte[] img, PixelFormat pixelFormat) => IsBmp(img) ? SetPixelFormat(img, pixelFormat) : ConvertPngToBmp(img, pixelFormat);
+    public static byte[] GetBmp(byte[] img, PixelFormat pixelFormat)
+    {
+        if (IsBmp(img))
+            return SetPixelFormat(img, pixelFormat);
+        else
+            return ConvertPngToBmp(img, pixelFormat);
+    }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
-    public static byte[] ConvertPngToBmp(byte[] png, PixelFormat? pixelFormat = null)
+    public static byte[] ConvertPngToBmp(byte[] png, PixelFormat? pixelFormat = null, bool ignoreDPI = true)
     {
-        // Get the DPI from the BMP image
-        var dpi = Png.Utilities.GetDPI(png);
         // Determine the appropriate type for the ToImage<TColor> method
         pixelFormat = pixelFormat ?? Png.Utilities.GetPixelFormat(png);
 
@@ -74,7 +78,11 @@ public static class Utilities
             PixelFormat.Format8bppIndexed => bitmap.ToImage<Gray<byte>>().Encode(".bmp"),
             _ => throw new NotSupportedException($"Pixel format {pixelFormat} is not supported."),
         };
-        return SetDPI(bmp, dpi);
+
+        if (ignoreDPI)
+            return bmp;
+        else
+            return SetDPI(bmp, Png.Utilities.GetDPI(png));
     }
 
     public static ImageUtilities.DPI GetDPI(byte[] image) =>

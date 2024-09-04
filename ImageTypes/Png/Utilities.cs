@@ -208,7 +208,12 @@ public static class Utilities
             if (Enum.IsDefined(typeof(ChunkTypes), chunkType))
             {
                 if (!chunks.ContainsKey((ChunkTypes)chunkType))
+                {
                     chunks.Add((ChunkTypes)chunkType, GetChunkData(reader, chunkLength, (ChunkTypes)chunkType));
+                    if ((ChunkTypes)chunkType == ChunkTypes.IEND)
+                        break;
+                }
+                    
                 else
                 {
                     chunks[(ChunkTypes)chunkType].Data.AddRange(reader.ReadBytes(chunkLength));
