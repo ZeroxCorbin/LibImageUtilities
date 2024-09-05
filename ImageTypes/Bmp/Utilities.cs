@@ -85,6 +85,15 @@ public static class Utilities
             return SetDPI(bmp, Png.Utilities.GetDPI(png));
     }
 
+    public static int GetWidth(byte[] image) =>
+    IsBmp(image) == false
+        ? throw new ArgumentException("The provided byte array is not a valid BMP image.")
+        : BitConverter.ToInt32(image, 18);
+    public static int GetHeight(byte[] image) =>
+    IsBmp(image) == false
+        ? throw new ArgumentException("The provided byte array is not a valid BMP image.")
+        : BitConverter.ToInt32(image, 22);
+
     public static ImageUtilities.DPI GetDPI(byte[] image) =>
         IsBmp(image) == false
             ? throw new ArgumentException("The provided byte array is not a valid BMP image.")
@@ -195,14 +204,7 @@ public static class Utilities
         return image[dataOffset..];
     }
 
-    public static int GetWidth(byte[] image) =>
-        IsBmp(image) == false
-            ? throw new ArgumentException("The provided byte array is not a valid BMP image.")
-            : BitConverter.ToInt32(image, 18);
-    public static int GetHeight(byte[] image) =>
-    IsBmp(image) == false
-        ? throw new ArgumentException("The provided byte array is not a valid BMP image.")
-        : BitConverter.ToInt32(image, 22);
+
 
     public static byte[] GetIndexedColorPallet(byte[] image)
     {

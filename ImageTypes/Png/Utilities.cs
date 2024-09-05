@@ -1,5 +1,4 @@
 ﻿using DotImaging;
-using LibImageUtilities.ImageTypes.Bmp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -66,7 +65,7 @@ public static class Utilities
     }
     public static byte[] GetPng(byte[] img, ImageUtilities.DPI dpi) => GetPng(img, dpi.X, dpi.Y);
     public static byte[] GetPng(byte[] img, PixelFormat pixelFormat) => IsPng(img) ? SetPixelFormat(img, pixelFormat) : ConvertBmpToPng(img, pixelFormat);
-    
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
     public static byte[] ConvertBmpToPng(byte[] bmp, PixelFormat? pixelFormat = null)
     {
@@ -85,6 +84,39 @@ public static class Utilities
             _ => throw new NotSupportedException($"Pixel format {pixelFormat} is not supported."),
         };
         return SetDPI(png, dpi);
+    }
+
+    public static int GetWidth(byte[] image)
+    {
+        if (!IsPng(image))
+            throw new ArgumentException("The provided byte array is not a valid PNG image.");
+
+        var png = new Png(image);
+        if (png.Chunks.TryGetValue(ChunkTypes.IHDR, out IChunk? value))
+        {
+            IHDR_Chunk ihdrChunk = (IHDR_Chunk)value;
+            return ihdrChunk.Width;
+        }
+        else
+        {
+            throw new ArgumentException("The PNG image does not contain an IHDR chunk.");
+        }
+    }
+    public static int GetHeight(byte[] image)
+    {
+        if (!IsPng(image))
+            throw new ArgumentException("The provided byte array is not a valid PNG image.");
+
+        var png = new Png(image);
+        if (png.Chunks.TryGetValue(ChunkTypes.IHDR, out IChunk? value))
+        {
+            IHDR_Chunk ihdrChunk = (IHDR_Chunk)value;
+            return ihdrChunk.Height;
+        }
+        else
+        {
+            throw new ArgumentException("The PNG image does not contain an IHDR chunk.");
+        }
     }
 
     public static ImageUtilities.DPI GetDPI(byte[] image)
@@ -153,7 +185,7 @@ public static class Utilities
         if (!IsPng(image))
             throw new ArgumentException("The provided byte array is not a valid PNG image.");
 
-        if(pixelFormat == GetPixelFormat(image))
+        if (pixelFormat == GetPixelFormat(image))
             return image;
 
         // Get the DPI from the BMP image
@@ -203,7 +235,7 @@ public static class Utilities
                     if ((ChunkTypes)chunkType == ChunkTypes.IEND)
                         break;
                 }
-                    
+
                 else
                 {
                     chunks[(ChunkTypes)chunkType].Data.AddRange(reader.ReadBytes(chunkLength));

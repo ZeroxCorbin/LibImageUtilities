@@ -4,7 +4,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace LibImageUtilities;
+namespace LibImageUtilities.ImageTypes;
 
 public class ImageUtilities
 {
@@ -16,6 +16,19 @@ public class ImageUtilities
         public int Y { get; set; }
     }
 
+    public static int GetImageHeight(byte[] image) =>
+        Png.Utilities.IsPng(image)
+        ? Png.Utilities.GetHeight(image)
+        : Bmp.Utilities.IsBmp(image)
+        ? Bmp.Utilities.GetHeight(image)
+        : throw new ArgumentException("Unsupported image format.");
+    public static int GetImageWidth(byte[] image) =>
+        Png.Utilities.IsPng(image)
+        ? Png.Utilities.GetWidth(image)
+        : Bmp.Utilities.IsBmp(image)
+        ? Bmp.Utilities.GetWidth(image)
+        : throw new ArgumentException("Unsupported image format.");
+
     /// <summary>
     /// Get the DPI of a PNG or BMP image.
     /// </summary>
@@ -23,10 +36,10 @@ public class ImageUtilities
     /// <returns>DPI</returns>
     /// <exception cref="ArgumentException"></exception>
     public static DPI GetImageDPI(byte[] image) =>
-        ImageTypes.Png.Utilities.IsPng(image)
-        ? ImageTypes.Png.Utilities.GetDPI(image)
-        : ImageTypes.Bmp.Utilities.IsBmp(image)
-        ? ImageTypes.Bmp.Utilities.GetDPI(image)
+        Png.Utilities.IsPng(image)
+        ? Png.Utilities.GetDPI(image)
+        : Bmp.Utilities.IsBmp(image)
+        ? Bmp.Utilities.GetDPI(image)
         : throw new ArgumentException("Unsupported image format.");
 
     /// <summary>
@@ -43,14 +56,29 @@ public class ImageUtilities
         if (dpiY <= 0)
             dpiY = dpiX; // Use dpiX if dpiY is not provided or invalid
 
-        return ImageTypes.Png.Utilities.IsPng(image)
-            ? ImageTypes.Png.Utilities.SetDPI(image, dpiX, dpiY)
+        return Png.Utilities.IsPng(image)
+            ? Png.Utilities.SetDPI(image, dpiX, dpiY)
 
-            : ImageTypes.Bmp.Utilities.IsBmp(image)
-            ? ImageTypes.Bmp.Utilities.SetDPI(image, dpiX, dpiY)
+            : Bmp.Utilities.IsBmp(image)
+            ? Bmp.Utilities.SetDPI(image, dpiX, dpiY)
 
             : throw new ArgumentException("Unsupported image format.");
     }
+    public static byte[] SetImageDPI(byte[] image, DPI dpi) => SetImageDPI(image, dpi.X, dpi.Y);
+
+    public static PixelFormat GetImagePixelFormat(byte[] image) =>
+        Png.Utilities.IsPng(image)
+        ? Png.Utilities.GetPixelFormat(image)
+        : Bmp.Utilities.IsBmp(image)
+        ? Bmp.Utilities.GetPixelFormat(image)
+        : throw new ArgumentException("Unsupported image format.");
+    public static byte[] SetImagePixelFormat(byte[] image, PixelFormat pixelFormat) =>
+        Png.Utilities.IsPng(image)
+        ? Png.Utilities.SetPixelFormat(image, pixelFormat)
+        : Bmp.Utilities.IsBmp(image)
+        ? Bmp.Utilities.SetPixelFormat(image, pixelFormat)
+        : throw new ArgumentException("Unsupported image format.");
+
 
     /// <summary>
     /// Get the UID of the entire byte array.
@@ -61,7 +89,7 @@ public class ImageUtilities
     {
         try
         {
-            return BitConverter.ToString(SHA256.HashData(image)).Replace("-", String.Empty);
+            return BitConverter.ToString(SHA256.HashData(image)).Replace("-", string.Empty);
         }
         catch (Exception ex)
         {
@@ -77,10 +105,10 @@ public class ImageUtilities
     {
         try
         {
-            byte[] imageData = ImageTypes.Png.Utilities.IsPng(image)
-                ? ImageTypes.Png.Utilities.GetImageData(image)
-                : ImageTypes.Bmp.Utilities.IsBmp(image)
-                ? ImageTypes.Bmp.Utilities.GetImageData(image)
+            byte[] imageData = Png.Utilities.IsPng(image)
+                ? Png.Utilities.GetImageData(image)
+                : Bmp.Utilities.IsBmp(image)
+                ? Bmp.Utilities.GetImageData(image)
                 : throw new ArgumentException("Unsupported image format.");
             return BitConverter.ToString(SHA256.HashData(imageData)).Replace("-", string.Empty);
         }
@@ -281,7 +309,7 @@ public class ImageUtilities
     {
         // load your photo
         using FileStream fs = new(path, FileMode.Open);
-        Bitmap photo = (Bitmap)Bitmap.FromStream(fs);
+        Bitmap photo = (Bitmap)Image.FromStream(fs);
         fs.Close();
 
         Bitmap newmap = new(photo.Width, photo.Height);
