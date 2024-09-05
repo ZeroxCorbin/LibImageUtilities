@@ -103,7 +103,7 @@ public static class Utilities
             };
         }
 
-        throw new ArgumentException("pHYs chunk not found in PNG file.");
+        return null;
     }
     public static byte[] SetDPI(byte[] image, ImageUtilities.DPI dpi) => SetDPI(image, dpi.X, dpi.Y);
     public static byte[] SetDPI(byte[] image, int dpiX, int dpiY)
@@ -161,24 +161,14 @@ public static class Utilities
 
         using MemoryStream ms = new(image);
         using var bitmap = new Bitmap(ms);
-        byte[] png;
-        switch (pixelFormat)
+        byte[] png = pixelFormat switch
         {
-            case PixelFormat.Format24bppRgb:
-                png = bitmap.ToImage<Bgr<byte>>().Encode(".png");
-                break;
-            case PixelFormat.Format32bppArgb:
-                png = bitmap.ToImage<Bgra<byte>>().Encode(".png");
-                break;
-            case PixelFormat.Format8bppIndexed:
-                png = bitmap.ToImage<Gray<byte>>().Encode(".png");
-                break;
-            default:
-                throw new NotSupportedException($"Pixel format {pixelFormat} is not supported.");
-        }
-
-        var pngFormat = GetPixelFormat(png);
-        return SetDPI(png, dpi);
+            PixelFormat.Format24bppRgb => bitmap.ToImage<Bgr<byte>>().Encode(".png"),
+            PixelFormat.Format32bppArgb => bitmap.ToImage<Bgra<byte>>().Encode(".png"),
+            PixelFormat.Format8bppIndexed => bitmap.ToImage<Gray<byte>>().Encode(".png"),
+            _ => throw new NotSupportedException($"Pixel format {pixelFormat} is not supported."),
+        };
+        return dpi != null ? SetDPI(png, dpi) : png;
     }
 
     public static byte[] GetImageData(byte[] image)
