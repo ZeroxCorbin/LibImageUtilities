@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using DotImaging;
 using LibImageUtilities.ImageTypes.Bmp.Headers;
 
 namespace LibImageUtilities.ImageTypes.Bmp;
 
 public class Bmp
 {
-    public FileHeader Header { get; }
-    public IInfoHeader InfoHeader { get; }
-    public ColorTable? ColorTable { get; }
+    public FileHeader Header { get; private set; }
+    public IInfoHeader InfoHeader { get; private set; }
+    public ColorTable? ColorTable { get; private set; }
 
     private List<byte> _imageData;
     public byte[] ImageData => _imageData.ToArray();
@@ -20,7 +22,12 @@ public class Bmp
         .Concat(ImageData)
         .ToArray();
 
-    public Bmp(byte[] image)
+    private Bmp(byte[] image, bool converted) => Parse(image);
+    public Bmp(byte[] image) : this(Utilities.GetBmp(image), true) { }
+    public Bmp(string path) : this(Utilities.GetBmp(File.ReadAllBytes(path)), true) { }
+    public Bmp(Stream stream) : this(Utilities.GetBmp(stream), true) { }
+
+    private void Parse(byte[] image)
     {
         Header = new FileHeader(image.Take(FileHeader.Length).ToArray());
 
@@ -33,7 +40,7 @@ public class Bmp
             : headerSize == 108
             ? new InfoHeaderV4(image.Skip(FileHeader.Length).Take(headerSize).ToArray())
             : headerSize == 124
-            ? (IInfoHeader)new InfoHeaderV5(image.Skip(FileHeader.Length).Take(headerSize).ToArray())
+            ? new InfoHeaderV5(image.Skip(FileHeader.Length).Take(headerSize).ToArray())
             : throw new Exception("Header size is not valid.");
 
         if (InfoHeader.BitCount <= 8)
@@ -102,5 +109,9 @@ public class Bmp
         if (_imageData.Count != expectedLength)
             throw new Exception("Image data length does not match expected length.");
     }
+
+    public static byte[] Get(string path) => Utilities.GetBmp(File.ReadAllBytes(path));
+    public static byte[] Get(Stream stream) => Utilities.GetBmp(stream);
+    public static byte[] Get(byte[] data) => Utilities.GetBmp(data);
 
 }

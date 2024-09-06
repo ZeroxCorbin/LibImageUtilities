@@ -13,6 +13,16 @@ public static class Utilities
         img[1] == 0x4D &&
         img.Length >= 54;
 
+    public static byte[] GetBmp(string path) => GetBmp(File.ReadAllBytes(path));
+    public static byte[] GetBmp(string path, int dpiX, int dpiY = 0) => GetBmp(File.ReadAllBytes(path), dpiX, dpiY);
+    public static byte[] GetBmp(string path, ImageUtilities.DPI dpi) => GetBmp(File.ReadAllBytes(path), dpi);
+    public static byte[] GetBmp(string path, PixelFormat pixelFormat) => GetBmp(File.ReadAllBytes(path), pixelFormat);
+
+    public static byte[] GetBmp(Stream stream) { using MemoryStream ms = new(); stream.CopyTo(ms); return GetBmp(ms.ToArray()); }
+    public static byte[] GetBmp(Stream stream, int dpiX, int dpiY = 0) { using MemoryStream ms = new(); stream.CopyTo(ms); return GetBmp(ms.ToArray(), dpiX, dpiY); }
+    public static byte[] GetBmp(Stream stream, ImageUtilities.DPI dpi) { using MemoryStream ms = new(); stream.CopyTo(ms); return GetBmp(ms.ToArray(), dpi); }
+    public static byte[] GetBmp(Stream stream, PixelFormat pixelFormat) { using MemoryStream ms = new(); stream.CopyTo(ms); return GetBmp(ms.ToArray(), pixelFormat); }
+
     /// <summary>
     /// Get BMP image from PNG or BMP image.
     /// </summary>

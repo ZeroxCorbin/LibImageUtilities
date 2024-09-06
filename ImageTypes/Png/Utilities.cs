@@ -20,6 +20,16 @@ public static class Utilities
     img[6] == 0x1A &&
     img[7] == 0x0A;
 
+    public static byte[] GetPng(string path) => GetPng(File.ReadAllBytes(path));
+    public static byte[] GetPng(string path, int dpiX, int dpiY = 0) => GetPng(File.ReadAllBytes(path), dpiX, dpiY);
+    public static byte[] GetPng(string path, ImageUtilities.DPI dpi) => GetPng(File.ReadAllBytes(path), dpi);
+    public static byte[] GetPng(string path, PixelFormat pixelFormat) => GetPng(File.ReadAllBytes(path), pixelFormat);
+
+    public static byte[] GetPng(Stream stream) { using MemoryStream ms = new(); stream.CopyTo(ms); return GetPng(ms.ToArray()); }
+    public static byte[] GetPng(Stream stream, int dpiX, int dpiY = 0) { using MemoryStream ms = new(); stream.CopyTo(ms); return GetPng(ms.ToArray(), dpiX, dpiY); }
+    public static byte[] GetPng(Stream stream, ImageUtilities.DPI dpi) { using MemoryStream ms = new(); stream.CopyTo(ms); return GetPng(ms.ToArray(), dpi); }
+    public static byte[] GetPng(Stream stream, PixelFormat pixelFormat) { using MemoryStream ms = new(); stream.CopyTo(ms); return GetPng(ms.ToArray(), pixelFormat); }
+
     /// <summary>
     /// Get PNG image from PNG or BMP image.
     /// Copies DPI, PixelFormat, and metadata if converted from BMP.
@@ -147,7 +157,7 @@ public static class Utilities
         {
             pHYs = new PHYS_Chunk(dpiX, dpiY)
         };
-        return png.GetBytes();
+        return png.RawData;
     }
 
     /// <summary>

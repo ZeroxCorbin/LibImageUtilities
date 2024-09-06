@@ -1,10 +1,21 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace LibImageUtilities.ImageTypes.Png;
 public class Png
 {
     public const int IntSize = 4;
+
+    private Png(byte[] img, bool converted)
+    {
+        Signature = new Signature(Utilities.GetPng(img).Take(Signature.Length).ToArray());
+        Chunks = Utilities.GetChunks(Utilities.GetPng(img));
+    }
+    public Png(byte[] image) : this(Utilities.GetPng(image), true) { }
+    public Png(string path) : this(Utilities.GetPng(File.ReadAllBytes(path)), true) { }
+    public Png(Stream stream) : this(Utilities.GetPng(stream), true) { }
+
 
     public Signature Signature { get; }
     public Dictionary<ChunkTypes, IChunk> Chunks { get; }
@@ -41,23 +52,26 @@ public class Png
         }
     }
 
-
-    public Png(byte[] image)
+    public byte[] RawData
     {
-        Signature = new Signature(image.Take(Signature.Length).ToArray());
-        Chunks = Utilities.GetChunks(image);
+        get
+        {
+            if (Signature == null)
+                return [];
+
+            List<byte> data = new(Signature.RawData);
+
+            var srt = Chunks.OrderBy(x => x.Value.Parameters.Ordering);
+            var lst = srt.ToList();
+
+            foreach (var chunk in lst)
+                data.AddRange(chunk.Value.RawData);
+
+            return [.. data];
+        }
     }
 
-    public byte[] GetBytes()
-    {
-        List<byte> data = new(Signature.RawData);
-
-        var srt = Chunks.OrderBy(x => x.Value.Parameters.Ordering);
-        var lst = srt.ToList();
-
-        foreach (var chunk in lst)
-            data.AddRange(chunk.Value.RawData);
-
-        return [.. data];
-    }
+    public static byte[] Get(string path) => Utilities.GetPng(File.ReadAllBytes(path));
+    public static byte[] Get(Stream stream) => Utilities.GetPng(stream);
+    public static byte[] Get(byte[] data) => Utilities.GetPng(data);
 }
