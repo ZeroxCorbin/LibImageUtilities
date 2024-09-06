@@ -1,0 +1,57 @@
+﻿using System.Collections.Generic;
+
+namespace LibImageUtilities.ImageTypes.Bmp.Headers;
+public class InfoHeaderV4 : InfoHeader
+{
+    public override int Length => 108;
+    public override bool IsValid => _data.Count == Length && _data[0] == 0x6C && _data[1] == 0x00 && _data[2] == 0x00 && _data[3] == 0x00;
+
+    private readonly byte[] DefaultData =
+    {
+        //Size
+        0x00, 0x00, 0x00, 0x00,
+        //Width
+        0x00, 0x00, 0x00, 0x00,
+        //Height
+        0x00, 0x00, 0x00, 0x00,
+        //Planes
+        0x00, 0x00,
+        //BitsPerPixel
+        0x00, 0x00,
+        //Compression
+        0x00, 0x00, 0x00, 0x00,
+        //SizeImage
+        0x00, 0x00, 0x00, 0x00,
+        //XPelsPerMeter
+        0x00, 0x00, 0x00, 0x00,
+        //YPelsPerMeter
+        0x00, 0x00, 0x00, 0x00,
+        //ClrUsed
+        0x00, 0x00, 0x00, 0x00,
+        //ClrImportant
+        0x00, 0x00, 0x00, 0x00,
+        //RedMask
+        0x00, 0x00, 0x00, 0x00,
+        //GreenMask
+        0x00, 0x00, 0x00, 0x00,
+        //BlueMask
+        0x00, 0x00, 0x00, 0x00,
+        //AlphaMask
+        0x00, 0x00, 0x00, 0x00,
+        //ColorSpaceType
+        0x00, 0x00, 0x00, 0x00,
+        //Endpoints
+        0x00, 0x00, 0x00, 0x00,
+        //GammaRed
+        0x00, 0x00, 0x00, 0x00,
+        //GammaGreen
+        0x00, 0x00, 0x00, 0x00,
+        //GammaBlue
+        0x00, 0x00, 0x00, 0x00
+    };
+
+
+    public InfoHeaderV4() => _data = [.. DefaultData];
+    public InfoHeaderV4(byte[] data) => _data = [.. data];
+    public InfoHeaderV4(List<byte> data) => _data = data;
+}

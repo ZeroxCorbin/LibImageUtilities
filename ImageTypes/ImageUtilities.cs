@@ -79,6 +79,13 @@ public class ImageUtilities
         ? Bmp.Utilities.SetPixelFormat(image, pixelFormat)
         : throw new ArgumentException("Unsupported image format.");
 
+    public static byte[] GetImageData(byte[] image) =>
+        Png.Utilities.IsPng(image)
+        ? Png.Utilities.GetImageData(image)
+        : Bmp.Utilities.IsBmp(image)
+        ? Bmp.Utilities.GetImageData(image)
+        : throw new ArgumentException("Unsupported image format.");
+
 
     /// <summary>
     /// Get the UID of the entire byte array.
