@@ -1,4 +1,5 @@
 ﻿using DotImaging;
+using ImageMagick;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -89,11 +90,48 @@ public static class Utilities
             _ => throw new NotSupportedException($"Pixel format {pixelFormat} is not supported."),
         };
 
-        if (ignoreDPI)
-            return bmp;
-        else
-            return SetDPI(bmp, Png.Utilities.GetDPI(png));
+        return ignoreDPI ? bmp : SetDPI(bmp, Png.Utilities.GetDPI(png));
     }
+    //[System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
+    //public static byte[] ConvertPngToBmp(byte[] png, PixelFormat? pixelFormat = null, bool ignoreDPI = true)
+    //{
+    //    using MemoryStream ms = new(png);
+    //    using var image = new MagickImage(ms);
+
+    //    if (pixelFormat.HasValue)
+    //    {
+    //        image.Format = MagickFormat.Bmp;
+    //        switch (pixelFormat.Value)
+    //        {
+    //            case PixelFormat.Format24bppRgb:
+    //                image.Depth = 24;
+    //                break;
+    //            case PixelFormat.Format32bppArgb:
+    //                image.Depth = 32;
+    //                break;
+    //            case PixelFormat.Format8bppIndexed:
+    //                image.Depth = 8;
+    //                break;
+    //            default:
+    //                throw new NotSupportedException($"Pixel format {pixelFormat} is not supported.");
+    //        }
+    //    }
+    //    else
+    //    {
+    //        image.Format = MagickFormat.Bmp;
+    //    }
+
+    //    if (!ignoreDPI)
+    //    {
+    //        var dpi = Png.Utilities.GetDPI(png);
+    //        image.Density = new Density(dpi.X, dpi.Y, DensityUnit.PixelsPerInch);
+    //    }
+
+    //    using MemoryStream bmpStream = new();
+    //    image.Write(bmpStream);
+    //    return bmpStream.ToArray();
+    //}
+
 
     public static int GetWidth(byte[] image) =>
     IsBmp(image) == false
