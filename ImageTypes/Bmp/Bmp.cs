@@ -13,8 +13,7 @@ public class Bmp
     public IInfoHeader InfoHeader { get; private set; }
     public ColorTable? ColorTable { get; private set; }
 
-    private List<byte> _imageData;
-    public byte[] ImageData => _imageData.ToArray();
+    public byte[] ImageData {get; set; }
 
     public byte[] RawData => Header.RawData
         .Concat(InfoHeader.RawData)
@@ -49,7 +48,7 @@ public class Bmp
             ColorTable = new ColorTable(image.Skip(FileHeader.Length + InfoHeader.Length).Take(colorTableLength).ToArray());
         }
 
-        _imageData = image.Skip(Header.DataOffset).ToList();
+        ImageData = image.Skip(Header.DataOffset).ToArray();
     }
 
     /// <summary>
@@ -68,7 +67,7 @@ public class Bmp
         if (Header.DataOffset != Header.RawDataLength + InfoHeader.RawDataLength + (ColorTable?.RawDataLength ?? 0))
             throw new Exception("Data offset does not match expected value.");
 
-        if (Header.FileSize != Header.DataOffset + _imageData.Count)
+        if (Header.FileSize != Header.DataOffset + ImageData.Length)
             throw new Exception("File size does not match expected value.");
 
         if (!InfoHeader.IsValid)
@@ -106,7 +105,7 @@ public class Bmp
         }
 
         int expectedLength = InfoHeader.Width * InfoHeader.Height * InfoHeader.BitCount / 8;
-        if (_imageData.Count != expectedLength)
+        if (ImageData.Length != expectedLength)
             throw new Exception("Image data length does not match expected length.");
     }
 
