@@ -74,63 +74,63 @@ public static class Utilities
             return ConvertPngToBmp(img, pixelFormat);
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
-    public static byte[] ConvertPngToBmp(byte[] png, PixelFormat? pixelFormat = null, bool ignoreDPI = true)
-    {
-        // Determine the appropriate type for the ToImage<TColor> method
-        pixelFormat = pixelFormat ?? Png.Utilities.GetPixelFormat(png);
-
-        using MemoryStream ms = new(png);
-        using var bitmap = new Bitmap(ms);
-        byte[] bmp = pixelFormat switch
-        {
-            PixelFormat.Format24bppRgb => bitmap.ToImage<Bgr<byte>>().Encode(".bmp"),
-            PixelFormat.Format32bppArgb => bitmap.ToImage<Bgra<byte>>().Encode(".bmp"),
-            PixelFormat.Format8bppIndexed => bitmap.ToImage<Gray<byte>>().Encode(".bmp"),
-            _ => throw new NotSupportedException($"Pixel format {pixelFormat} is not supported."),
-        };
-
-        return ignoreDPI ? bmp : SetDPI(bmp, Png.Utilities.GetDPI(png));
-    }
     //[System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
     //public static byte[] ConvertPngToBmp(byte[] png, PixelFormat? pixelFormat = null, bool ignoreDPI = true)
     //{
+    //    // Determine the appropriate type for the ToImage<TColor> method
+    //    pixelFormat = pixelFormat ?? Png.Utilities.GetPixelFormat(png);
+
     //    using MemoryStream ms = new(png);
-    //    using var image = new MagickImage(ms);
-
-    //    if (pixelFormat.HasValue)
+    //    using var bitmap = new Bitmap(ms);
+    //    byte[] bmp = pixelFormat switch
     //    {
-    //        image.Format = MagickFormat.Bmp;
-    //        switch (pixelFormat.Value)
-    //        {
-    //            case PixelFormat.Format24bppRgb:
-    //                image.Depth = 24;
-    //                break;
-    //            case PixelFormat.Format32bppArgb:
-    //                image.Depth = 32;
-    //                break;
-    //            case PixelFormat.Format8bppIndexed:
-    //                image.Depth = 8;
-    //                break;
-    //            default:
-    //                throw new NotSupportedException($"Pixel format {pixelFormat} is not supported.");
-    //        }
-    //    }
-    //    else
-    //    {
-    //        image.Format = MagickFormat.Bmp;
-    //    }
+    //        PixelFormat.Format24bppRgb => bitmap.ToImage<Bgr<byte>>().Encode(".bmp"),
+    //        PixelFormat.Format32bppArgb => bitmap.ToImage<Bgra<byte>>().Encode(".bmp"),
+    //        PixelFormat.Format8bppIndexed => bitmap.ToImage<Gray<byte>>().Encode(".bmp"),
+    //        _ => throw new NotSupportedException($"Pixel format {pixelFormat} is not supported."),
+    //    };
 
-    //    if (!ignoreDPI)
-    //    {
-    //        var dpi = Png.Utilities.GetDPI(png);
-    //        image.Density = new Density(dpi.X, dpi.Y, DensityUnit.PixelsPerInch);
-    //    }
-
-    //    using MemoryStream bmpStream = new();
-    //    image.Write(bmpStream);
-    //    return bmpStream.ToArray();
+    //    return ignoreDPI ? bmp : SetDPI(bmp, Png.Utilities.GetDPI(png));
     //}
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
+    public static byte[] ConvertPngToBmp(byte[] png, PixelFormat? pixelFormat = null, bool ignoreDPI = true)
+    {
+        using MemoryStream ms = new(png);
+        using var image = new MagickImage(ms);
+
+        if (pixelFormat.HasValue)
+        {
+            image.Format = MagickFormat.Bmp3;
+            switch (pixelFormat.Value)
+            {
+                case PixelFormat.Format24bppRgb:
+                    image.Depth = 24;
+                    break;
+                case PixelFormat.Format32bppArgb:
+                    image.Depth = 32;
+                    break;
+                case PixelFormat.Format8bppIndexed:
+                    image.Depth = 8;
+                    break;
+                default:
+                    throw new NotSupportedException($"Pixel format {pixelFormat} is not supported.");
+            }
+        }
+        else
+        {
+            image.Format = MagickFormat.Bmp3;
+        }
+
+        if (!ignoreDPI)
+        {
+            var dpi = Png.Utilities.GetDPI(png);
+            image.Density = new Density(dpi.X, dpi.Y, DensityUnit.PixelsPerInch);
+        }
+
+        using MemoryStream bmpStream = new();
+        image.Write(bmpStream);
+        return bmpStream.ToArray();
+    }
 
 
     public static int GetWidth(byte[] image) =>
