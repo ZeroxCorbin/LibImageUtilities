@@ -63,7 +63,7 @@ public static class Utilities
             }
         }
 
-        return ConvertPngToBmp(img);
+        return ConvertPngToBmp(img, ignoreDPI: false);
     }
     public static byte[] GetBmp(byte[] img, ImageUtilities.DPI dpi) => GetBmp(img, dpi.X, dpi.Y);
     public static byte[] GetBmp(byte[] img, PixelFormat pixelFormat)
