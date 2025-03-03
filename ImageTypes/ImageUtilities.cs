@@ -352,4 +352,7 @@ public class ImageUtilities
         newmap.Save(path, ImageFormat.Png);
 
     }
+
+
+
 }
